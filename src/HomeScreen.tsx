@@ -7,7 +7,8 @@ import Svg, { Defs, Ellipse, RadialGradient, Rect, Stop } from 'react-native-svg
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Character from './Character';
 import { colors, fonts, MOODS } from './theme';
-import { dateKey, loadCharacterName, loadEntries, saveEntry } from './storage';
+import Onboarding, { OnboardingResult } from './Onboarding';
+import { dateKey, loadEntries, loadSettings, patchSettings, saveEntry } from './storage';
 
 const WEEK = '日月火水木金土';
 
@@ -22,6 +23,9 @@ export default function HomeScreen() {
   const [sleeping, setSleeping] = useState(false);
   const [name, setName] = useState('もち');
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [onbDone, setOnbDone] = useState(true); // はじめの画面を済ませたか
+  const [firstDone, setFirstDone] = useState(true); // 最初の1回を保存したか
+  const [hintOff, setHintOff] = useState(false); // スワイプの案内を消したか
 
   // アニメーション用の値
   const float = useRef(new Animated.Value(0)).current;
@@ -33,9 +37,12 @@ export default function HomeScreen() {
   // 起動時:保存済みデータを読み込む。今日すでに書いていたら「おやすみ」状態にする
   useEffect(() => {
     (async () => {
-      const [entries, n, rm] = await Promise.all([
-        loadEntries(), loadCharacterName(), AccessibilityInfo.isReduceMotionEnabled(),
+      const [entries, settings, rm] = await Promise.all([
+        loadEntries(), loadSettings(), AccessibilityInfo.isReduceMotionEnabled(),
       ]);
+      const hasData = Object.keys(entries).length > 0; // すでに使っている人には、はじめの画面を出さない
+      setOnbDone(!!settings.onb || hasData);
+      setFirstDone(!!settings.first || hasData);
       const today = entries[dateKey(new Date())];
       if (today && MOODS[today.mood]) {
         setIdx(today.mood);
@@ -44,7 +51,7 @@ export default function HomeScreen() {
         fade.setValue(0);
         bye.setValue(1);
       }
-      setName(n);
+      setName((settings.look?.n || '').trim().slice(0, 8) || 'もち');
       setReduceMotion(rm);
       setReady(true);
     })();
@@ -64,6 +71,7 @@ export default function HomeScreen() {
   // 表情を切り替える(step: 1=次, -1=前)
   const go = (step: number) => {
     setIdx((i) => (i + step + MOODS.length) % MOODS.length);
+    setHintOff(true);
     if (reduceMotion) return;
     slideX.setValue(step > 0 ? 50 : -50);
     slideO.setValue(0);
@@ -97,6 +105,7 @@ export default function HomeScreen() {
   const onSave = async () => {
     Keyboard.dismiss();
     await saveEntry(dateKey(new Date()), { mood: idx, note });
+    if (!firstDone) { setFirstDone(true); await patchSettings({ first: true }); }
     setSleep(true);
   };
 
@@ -104,6 +113,16 @@ export default function HomeScreen() {
   const onChangeNote = (v: string) => setNote(v.split('\n').slice(0, 3).join('\n').slice(0, 90));
 
   if (!ready) return <View style={[styles.root, { backgroundColor: colors.bg }]} />;
+
+  if (!onbDone) {
+    const finish = async (r: OnboardingResult) => {
+      await patchSettings({ onb: true, nt: r.nt, look: { n: r.name } });
+      setName(r.name);
+      setOnbDone(true);
+    };
+    return <Onboarding reduceMotion={reduceMotion} onDone={finish} />;
+  }
+  const showFirst = !firstDone; // 最初の1回だけの案内
 
   const now = new Date();
   const dateText = `${now.getMonth() + 1}月${now.getDate()}日(${WEEK[now.getDay()]})`;
@@ -128,7 +147,7 @@ export default function HomeScreen() {
       >
         <Animated.View style={[styles.top, { opacity: fade }]} pointerEvents={sleeping ? 'none' : 'auto'}>
           <Text style={styles.date}>{dateText}</Text>
-          <Text style={styles.hello}>{'おつかれさま。\n今日はどんな日だった?'}</Text>
+          <Text style={styles.hello}>{showFirst ? 'さっそく、\n今日のこと聞かせてね' : 'おつかれさま。\n今日はどんな日だった?'}</Text>
         </Animated.View>
 
         <View style={styles.stage} {...swipe.panHandlers}>
@@ -151,6 +170,7 @@ export default function HomeScreen() {
             <View style={styles.dots}>
               {MOODS.map((_, i) => <View key={i} style={[styles.dot, i === idx && styles.dotOn]} />)}
             </View>
+            {showFirst && !hintOff && <Text style={styles.hint}>左右にスワイプして、今日の顔を選んでね</Text>}
           </Animated.View>
         </View>
 
@@ -204,6 +224,7 @@ const styles = StyleSheet.create({
     fontSize: 16, lineHeight: 26, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 14, fontFamily: fonts.regular,
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : {}),
   },
+  hint: { marginTop: 12, color: colors.moon, fontSize: 13, fontFamily: fonts.regular },
   count: { textAlign: 'right', color: colors.sub, fontSize: 12, marginTop: 6, marginRight: 6, marginBottom: 12, fontFamily: fonts.regular },
   save: { height: 56, borderRadius: 28, backgroundColor: colors.moon, alignItems: 'center', justifyContent: 'center' },
   saveText: { color: colors.ink, fontSize: 17, fontFamily: fonts.bold },

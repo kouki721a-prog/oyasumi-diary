@@ -33,9 +33,20 @@ export async function saveEntry(key: string, entry: Entry): Promise<void> {
   await AsyncStorage.setItem(ENTRIES_KEY, JSON.stringify(all));
 }
 
-// キャラの名前(今は読むだけ。変更する画面はあとの機能で作る)
-export async function loadCharacterName(): Promise<string> {
-  const s = await readJson(SETTINGS_KEY);
-  const n = s.look && typeof s.look.n === 'string' ? s.look.n.trim().slice(0, 8) : '';
-  return n || 'もち';
+// 設定(はじめの画面を済ませたか、おしらせ、キャラの名前など)
+export type Settings = {
+  onb?: boolean; // はじめの画面を済ませた
+  first?: boolean; // 最初の1回を保存した
+  nt?: { on: boolean; time: string }; // おしらせ(オン/オフ・時刻)
+  look?: { n?: string }; // キャラの名前(色・アクセサリーはあとの機能で追加)
+};
+
+export async function loadSettings(): Promise<Settings> {
+  return (await readJson(SETTINGS_KEY)) as Settings;
+}
+
+// 設定の一部だけを書きかえる
+export async function patchSettings(patch: Settings): Promise<void> {
+  const cur = await loadSettings();
+  await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...cur, ...patch }));
 }
