@@ -13,6 +13,11 @@ export function dateKey(d: Date): string {
   return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
 }
 
+// ひとことを3行・90文字までにそろえる
+export function clampNote(v: string): string {
+  return v.split('\n').slice(0, 3).join('\n').slice(0, 90);
+}
+
 async function readJson(key: string): Promise<Record<string, any>> {
   try {
     const raw = await AsyncStorage.getItem(key);

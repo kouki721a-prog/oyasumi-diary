@@ -7,8 +7,9 @@ import Svg, { Defs, Ellipse, RadialGradient, Rect, Stop } from 'react-native-svg
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Character from './Character';
 import { colors, fonts, MOODS } from './theme';
+import History from './History';
 import Onboarding, { OnboardingResult } from './Onboarding';
-import { dateKey, loadEntries, loadSettings, patchSettings, saveEntry } from './storage';
+import { clampNote, dateKey, loadEntries, loadSettings, patchSettings, saveEntry } from './storage';
 
 const WEEK = '日月火水木金土';
 
@@ -26,6 +27,7 @@ export default function HomeScreen() {
   const [onbDone, setOnbDone] = useState(true); // はじめの画面を済ませたか
   const [firstDone, setFirstDone] = useState(true); // 最初の1回を保存したか
   const [hintOff, setHintOff] = useState(false); // スワイプの案内を消したか
+  const [showHist, setShowHist] = useState(false); // 「きろく」画面を開いているか
 
   // アニメーション用の値
   const float = useRef(new Animated.Value(0)).current;
@@ -110,7 +112,7 @@ export default function HomeScreen() {
   };
 
   // 3行まで・90文字までにそろえる
-  const onChangeNote = (v: string) => setNote(v.split('\n').slice(0, 3).join('\n').slice(0, 90));
+  const onChangeNote = (v: string) => setNote(clampNote(v));
 
   if (!ready) return <View style={[styles.root, { backgroundColor: colors.bg }]} />;
 
@@ -201,6 +203,11 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       </KeyboardAvoidingView>
+
+      <Pressable style={[styles.calBtn, { top: insets.top + 14 }]} onPress={() => { Keyboard.dismiss(); setShowHist(true); }}>
+        <Text style={styles.calBtnText}>きろく</Text>
+      </Pressable>
+      {showHist && <History reduceMotion={reduceMotion} onClose={() => setShowHist(false)} />}
     </View>
   );
 }
@@ -224,6 +231,8 @@ const styles = StyleSheet.create({
     fontSize: 16, lineHeight: 26, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 14, fontFamily: fonts.regular,
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : {}),
   },
+  calBtn: { position: 'absolute', right: 16, height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', zIndex: 5 },
+  calBtnText: { color: colors.moon, fontSize: 13, fontFamily: fonts.medium },
   hint: { marginTop: 12, color: colors.moon, fontSize: 13, fontFamily: fonts.regular },
   count: { textAlign: 'right', color: colors.sub, fontSize: 12, marginTop: 6, marginRight: 6, marginBottom: 12, fontFamily: fonts.regular },
   save: { height: 56, borderRadius: 28, backgroundColor: colors.moon, alignItems: 'center', justifyContent: 'center' },
