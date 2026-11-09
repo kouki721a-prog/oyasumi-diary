@@ -1,0 +1,38 @@
+# スマホのブラウザで見られるWeb版を作って、gh-pagesブランチに公開する
+name: Deploy web
+on:
+  push:
+    branches: [claude/oyasumi-diary-app-uh68oe, main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo export --platform web --output-dir dist
+      - name: Tune index.html for phones
+        run: |
+          sed -i 's|shrink-to-fit=no" />|shrink-to-fit=no, viewport-fit=cover" />\n    <meta name="apple-mobile-web-app-capable" content="yes" />\n    <meta name="apple-mobile-web-app-title" content="おやすみ日記" />\n    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />\n    <style>html,body{background:#0F1B3D}</style>|' dist/index.html
+          grep -c 'viewport-fit=cover' dist/index.html
+      - name: Publish to gh-pages
+        run: |
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
+          cd dist
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy web build"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
