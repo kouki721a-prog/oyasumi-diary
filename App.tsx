@@ -1,20 +1,17 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts, ZenMaruGothic_400Regular, ZenMaruGothic_500Medium, ZenMaruGothic_700Bold } from '@expo-google-fonts/zen-maru-gothic';
+import HomeScreen from './src/HomeScreen';
+import { colors } from './src/theme';
 
 export default function App() {
+  const [loaded] = useFonts({ ZenMaruGothic_400Regular, ZenMaruGothic_500Medium, ZenMaruGothic_700Bold });
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      {loaded ? <HomeScreen /> : <View style={{ flex: 1, backgroundColor: colors.bg }} />}
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
