@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
   input: {
     height: 92, borderRadius: 22, backgroundColor: colors.card, color: colors.text,
     fontSize: 16, lineHeight: 26, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 14, fontFamily: fonts.regular,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : {}),
   },
   count: { textAlign: 'right', color: colors.sub, fontSize: 12, marginTop: 6, marginRight: 6, marginBottom: 12, fontFamily: fonts.regular },
   save: { height: 56, borderRadius: 28, backgroundColor: colors.moon, alignItems: 'center', justifyContent: 'center' },

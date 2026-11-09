@@ -15,8 +15,8 @@ function Parts({ face }: { face: Face }) {
         <>
           <Path d="M76 108q10 9 20 0M124 108q10 9 20 0" strokeWidth={5} {...stroke} />
           <Path d="M102 126q8 6 16 0" strokeWidth={4.5} {...stroke} />
-          <SvgText x={160} y={62} fontSize={20} fill={colors.moon} fontWeight="700">z</SvgText>
-          <SvgText x={176} y={42} fontSize={15} fill={colors.moon} fontWeight="700">z</SvgText>
+          <SvgText x={160} y={62} fontFamily="sans-serif" fontSize={20} fill={colors.moon} fontWeight="700">z</SvgText>
+          <SvgText x={176} y={42} fontFamily="sans-serif" fontSize={15} fill={colors.moon} fontWeight="700">z</SvgText>
         </>
       );
     case 0:
