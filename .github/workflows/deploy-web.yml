@@ -21,6 +21,10 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx expo export --platform web --output-dir dist
+      - name: Tune index.html for phones
+        run: |
+          sed -i 's|shrink-to-fit=no" />|shrink-to-fit=no, viewport-fit=cover" />\n    <meta name="apple-mobile-web-app-capable" content="yes" />\n    <meta name="apple-mobile-web-app-title" content="おやすみ日記" />\n    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />\n    <style>html,body{background:#0F1B3D}</style>|' dist/index.html
+          grep -c 'viewport-fit=cover' dist/index.html
       - name: Publish to gh-pages
         run: |
           touch dist/.nojekyll
